@@ -2,7 +2,8 @@ import tensorflow as tf
 import numpy as np
 from datetime import datetime
 from trajectory import Trajectory
-
+from observation_preprocessing import preprocess_atari
+import matplotlib.pyplot as plt
 
 class Actor:
 
@@ -27,6 +28,7 @@ class Actor:
         with self.sess.as_default(), self.sess.graph.as_default():
             for episode in range(100000000):
                 observation = self.env.reset()
+                observation = preprocess_atari(observation)
                 done = False
                 reward_sum = 0
                 while not done:
@@ -37,8 +39,12 @@ class Actor:
                         pi, v = self.model.predict(self.sess, observation)
                         action = np.random.choice(range(4), p=pi)
                         observation_next, reward, done, _ = self.env.step(action)
+                        if reward > 1.0:
+                            reward = 1.0
+                        elif reward < -1.0:
+                            reward = -1.0
                         # self.env.render()
-
+                        observation_next = preprocess_atari(observation_next)
                         reward_sum += reward
                         trajectory.add_step(observation, action, v, reward)
                         observation = observation_next

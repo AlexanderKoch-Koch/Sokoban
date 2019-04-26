@@ -3,34 +3,32 @@ from model import Model
 
 
 class FCModel(Model):
-    def __init__(self):
+    def __init__(self, scope, observation_shape=(10, 10), num_actions=4, debug=True):
+        super().__init__(scope, observation_shape=observation_shape)
         print("constructing model with scope: " + scope)
         with tf.variable_scope(scope):
-            self.tf_input = tf.placeholder(dtype=tf.float32, shape=(None,) + observation_shape, name="observation")
-            self.tf_advantage = tf.placeholder(dtype=tf.float32, shape=(None,), name="advantage")
-            self.tf_action = tf.placeholder(dtype=tf.int32, shape=(None,), name="action")
 
             with tf.name_scope("feature_extraction"):
                 l0 = tf.layers.flatten(self.tf_input)
                 with tf.name_scope("layer_1"):
-                    tf_w1 = tf.Variable(tf.truncated_normal(shape=(l0.get_shape().as_list()[-1], 100), stddev=0.1))
-                    tf_b1 = tf.Variable(tf.truncated_normal(shape=(100,), stddev=0.1))
+                    tf_w1 = tf.Variable(tf.truncated_normal(shape=(l0.get_shape().as_list()[-1], 500), stddev=0.1))
+                    tf_b1 = tf.Variable(tf.truncated_normal(shape=(500,), stddev=0.1))
                     self.tf_l1 = tf.nn.relu(tf.add(tf.matmul(l0, tf_w1), tf_b1))
 
                 with tf.name_scope("layer_2"):
-                    tf_w2 = tf.Variable(tf.truncated_normal(shape=(100, 100), stddev=0.1))
-                    tf_b2 = tf.Variable(tf.truncated_normal(shape=(100,), stddev=0.1))
+                    tf_w2 = tf.Variable(tf.truncated_normal(shape=(500, 500), stddev=0.1))
+                    tf_b2 = tf.Variable(tf.truncated_normal(shape=(500,), stddev=0.1))
                     self.tf_l2 = tf.nn.relu(tf.add(tf.matmul(self.tf_l1, tf_w2), tf_b2))
 
-            with tf.name_scope("LSTM_layer"):
-                lstm_cells = tf.nn.rnn_cell.BasicLSTMCell(10)
-                self.features_outputs, self.states = tf.nn.static_rnn(lstm_cells, self.tf_l2, dtype=tf.float32)
+            # with tf.name_scope("LSTM_layer"):
+            #    lstm_cells = tf.nn.rnn_cell.BasicLSTMCell(10)
+            #    self.features_outputs, self.states = tf.nn.static_rnn(lstm_cells, self.tf_l2, dtype=tf.float32)
 
             # Actor head
             with tf.name_scope("policy_head"):
-                tf_actor_w3 = tf.Variable(tf.truncated_normal(shape=(100, num_actions), stddev=0.1))
+                tf_actor_w3 = tf.Variable(tf.truncated_normal(shape=(500, num_actions), stddev=0.1))
                 tf_actor_b3 = tf.Variable(tf.truncated_normal(shape=(num_actions,), stddev=0.1))
-                self.tf_actor_output = tf.nn.softmax(tf.add(tf.matmul(self.features_outputs, tf_actor_w3), tf_actor_b3))
+                self.tf_actor_output = tf.nn.softmax(tf.add(tf.matmul(self.tf_l2, tf_actor_w3), tf_actor_b3))
                 tf_actor_log = tf.log(self.tf_actor_output)
                 tf_action_one_hot = tf.one_hot(self.tf_action, num_actions, dtype=tf.float32)
                 tf_actor_output_reduced = tf.reduce_sum(tf_action_one_hot * self.tf_actor_output, [1])
@@ -38,11 +36,11 @@ class FCModel(Model):
 
             # Critic head
             with tf.name_scope("value_head"):
-                tf_critic_w3 = tf.Variable(tf.truncated_normal(shape=(100, 1), stddev=0.1))
+                tf_critic_w3 = tf.Variable(tf.truncated_normal(shape=(500, 1), stddev=0.1))
                 tf_critic_b3 = tf.Variable(tf.truncated_normal(shape=(1,), stddev=0.1))
-                self.tf_critic_output = tf.squeeze(tf.add(tf.matmul(self.features_outputs, tf_critic_w3), tf_critic_b3),
+                self.tf_critic_output = tf.squeeze(tf.add(tf.matmul(self.tf_l2, tf_critic_w3), tf_critic_b3),
                                                    name="state_value_prediction")
-                self.tf_critic_y = tf.placeholder(dtype=tf.float32, shape=(None,), name="true_state_value")
+
                 self.tf_critic_loss = tf.reduce_mean(
                     tf.square(tf.subtract(self.tf_critic_output, self.tf_critic_y), name="critic_loss"))
 
@@ -73,3 +71,5 @@ class FCModel(Model):
                 tf.summary.scalar("policy_entropy", self.entropy)
 
             self.tf_merged_summaries = tf.summary.merge_all(scope=scope)
+
+            super().set_model_outputs(self.tf_actor_output, self.tf_critic_output, self.tf_apply_grads, self.tf_merged_summaries)
