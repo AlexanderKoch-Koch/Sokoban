@@ -4,13 +4,12 @@ from model import Model
 
 class ConvModel(Model):
     def __init__(self, scope, observation_shape=(10, 10), num_actions=4, debug=True):
-        super().__init__(scope, observation_shape=observation_shape)
         print("constructing model with scope: " + scope)
         with tf.variable_scope(scope):
+            super().__init__(scope, observation_shape=observation_shape)
 
             with tf.name_scope("feature_extraction"):
-                tf_l0 = tf.expand_dims(self.tf_input, axis=3)
-                tf_l1 = tf.keras.layers.Conv2D(16, (8, 8), strides=(4, 4), activation="relu")(tf_l0)
+                tf_l1 = tf.keras.layers.Conv2D(16, (8, 8), strides=(4, 4), activation="relu")(self.tf_input)
                 tf_l2 = tf.keras.layers.Conv2D(32, (4, 4), strides=(2, 2), activation="relu")(tf_l1)
                 tf_flattened = tf.keras.layers.Flatten()(tf_l2)
                 self.tf_features = tf.keras.layers.Dense(256, activation="relu")(tf_flattened)

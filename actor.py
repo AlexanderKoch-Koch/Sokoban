@@ -4,6 +4,8 @@ from datetime import datetime
 from trajectory import Trajectory
 from observation_preprocessing import preprocess_atari
 import matplotlib.pyplot as plt
+import time
+import  math
 
 class Actor:
 
@@ -26,12 +28,12 @@ class Actor:
         t_max = 5
         train_step = 0
         with self.sess.as_default(), self.sess.graph.as_default():
-            for episode in range(100000000):
+            for episode in range(10000000000):
                 observation = self.env.reset()
-                observation = preprocess_atari(observation)
                 done = False
                 reward_sum = 0
                 while not done:
+                    time.sleep(0.01)
                     # memory = []
                     trajectory = Trajectory(self.gamma)
                     self.model.copy_global_weights(self.sess)
@@ -39,12 +41,8 @@ class Actor:
                         pi, v = self.model.predict(self.sess, observation)
                         action = np.random.choice(range(4), p=pi)
                         observation_next, reward, done, _ = self.env.step(action)
-                        if reward > 1.0:
-                            reward = 1.0
-                        elif reward < -1.0:
-                            reward = -1.0
+
                         # self.env.render()
-                        observation_next = preprocess_atari(observation_next)
                         reward_sum += reward
                         trajectory.add_step(observation, action, v, reward)
                         observation = observation_next
@@ -57,7 +55,17 @@ class Actor:
                         _, v = self.model.predict(self.sess, observation)
                         bootstrap_state_value = v
                     trajectory.set_bootstrap_value(bootstrap_state_value)
-                    self.model.train(self.sess, trajectory, train_step, summary_writer=self.summary_writer)
+
+                    # log every 10 train steps
+                    if train_step % 10 == 0:
+                        self.model.train(self.sess, trajectory, train_step, summary_writer=self.summary_writer)
+                        if self.summary_writer is not None:
+                            summary = tf.Summary(
+                                value=[tf.Summary.Value(tag="sum_train_step_reward", simple_value=sum(trajectory.rewards))])
+                            self.summary_writer.add_summary(summary, train_step)
+                    else:
+                        self.model.train(self.sess, trajectory, train_step, summary_writer=None)
+                        
                     train_step += 1
 
                 if self.summary_writer is not None:
