@@ -1,12 +1,13 @@
 import threading
-import fc_model
-from conv_model import ConvModel
+import models.fc_model
+from models.conv_model import ConvModel
 import actor
 import tensorflow as tf
 # from tensorflow.python import debug as tf_debug
 # import sokoban_env
 import gym
 from atari_wrapper import AtariWrapper
+
 num_workers = 1
 gamma = 0.99
 
