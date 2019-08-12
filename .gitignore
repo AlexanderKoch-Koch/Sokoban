@@ -4,4 +4,6 @@ runs
 venv
 boxoban-levels
 *.pyc
+*.swo
 *.swp
+
