@@ -3,7 +3,8 @@ import tensorflow.keras.layers as layers
 import tensorflow.keras.optimizers as optimizers
 import numpy as np
 from .model import Model
-
+from absl import flags
+FLAGS = flags.FLAGS
 
 class ConvNet(Model):
     def __init__(self, observation_shape=(10, 10), num_actions=4):
@@ -67,14 +68,14 @@ class ConvNet(Model):
 
 
 class ConvModel(tf.keras.Model):
-    def __init__(self, observation_shape=(80, 80, 4), num_actions=4):
+    def __init__(self):
         super(ConvModel, self).__init__()
-        self.conv1 = layers.Conv2D(16, (8, 8), strides=(4, 4), input_shape=observation_shape, activation="relu")
+        self.conv1 = layers.Conv2D(16, (8, 8), strides=(4, 4), input_shape=FLAGS.observation_shape, activation="relu")
         self.conv2 = layers.Conv2D(32, (4, 4), strides=(2, 2), activation="relu")
         self.flatten = layers.Flatten()
         self.dense = layers.Dense(256, activation="relu")
 
-        self.actor_dense = layers.Dense(num_actions, activation="softmax")
+        self.actor_dense = layers.Dense(FLAGS.num_actions, activation="softmax")
         self.critic_dense = layers.Dense(1, activation="linear")
 
     def call(self, x):

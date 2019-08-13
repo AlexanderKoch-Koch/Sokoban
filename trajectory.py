@@ -9,7 +9,6 @@ class Trajectory:
         self.actions = []
         self.value_predictions = []
         self.gamma = gamma
-        self.bootstrap_value = None
 
     def add_step(self, observation, action, value_prediction, reward):
         self.actions.append(action)
@@ -17,12 +16,8 @@ class Trajectory:
         self.rewards.append(reward)
         self.value_predictions.append(value_prediction)
 
-    def set_bootstrap_value(self, bootstrap_value):
-        self.bootstrap_value = bootstrap_value
-
-    def get_training_batch(self):
-        assert self.bootstrap_value is not None, "bootstrap value has to be set before calling get_training_batch()"
-        reward_return = self.bootstrap_value
+    def get_training_batch(self, bootstrap_value):
+        reward_return = bootstrap_value
         advantages = []
         returns = []
         for i in reversed(range(len(self.rewards))):
