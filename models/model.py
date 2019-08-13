@@ -1,7 +1,8 @@
+from abc import ABC, abstractmethod
 import tensorflow as tf
 
 
-class Model:
+class Model(ABC):
 
     def __init__(self, scope, observation_shape=(10, 10)):
         self.tf_input = tf.placeholder(dtype=tf.float32, shape=(None,) + observation_shape, name="observation")
@@ -26,8 +27,10 @@ class Model:
                                                      feed_dict={self.tf_input: observation})
         return policy_output[0], value_output
 
+    @abstractmethod
     def train(self, tf_session, trajectory, step, summary_writer=None):
-        observations, actions, advantages, returns = trajectory.get_training_batch()
+        pass
+        """observations, actions, advantages, returns = trajectory.get_training_batch()
         feed_dict = {
             self.tf_input: observations,
             self.tf_action: actions,
@@ -37,7 +40,7 @@ class Model:
         _, summaries = tf_session.run([self.tf_apply_grads, self.tf_summary], feed_dict=feed_dict)
 
         if summary_writer is not None:
-            summary_writer.add_summary(summaries, step)
+            summary_writer.add_summary(summaries, step)"""
 
     def copy_global_weights(self, tf_session):
         tf_session.run(self.copy_ops)

@@ -23,7 +23,6 @@ class Trajectory:
     def get_training_batch(self):
         assert self.bootstrap_value is not None, "bootstrap value has to be set before calling get_training_batch()"
         reward_return = self.bootstrap_value
-
         advantages = []
         returns = []
         for i in reversed(range(len(self.rewards))):
