@@ -28,3 +28,19 @@ class Trajectory:
         advantages.reverse()
         returns.reverse()
         return self.observations, self.actions, advantages, returns
+
+    def __eq__(self, other):
+        '''useful for testing'''
+        if len(self.rewards) != len(other.rewards):
+            return False
+
+        for i in range(len(self.rewards)):
+            if not np.array_equal(self.observations[i], other.observations[i]):
+                return False
+
+            if (self.rewards[i] != other.rewards[i] or
+                    self.actions[i] != other.actions[i] or 
+                    self.value_predicitons != other.value_predicitons):
+                return False
+
+        return True
